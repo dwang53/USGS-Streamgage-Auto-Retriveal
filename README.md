@@ -28,7 +28,8 @@ Dongchen Wang
 ## Example
 - Run the script: `python usgs_streamgage_retrieval.py`
 - Or check the Jupyter notebook example: `USGS_Streamgage-Auto-Retriveal_Example.ipynb`
-!ExamplePlot.png
+![ExamplePlot](https://github.com/user-attachments/assets/c34fc0bf-fe25-4215-be29-8e8125378de9)
+
 
 ## References
 - USGS Water Services API Documentation
