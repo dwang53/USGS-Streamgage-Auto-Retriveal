@@ -1,3 +1,37 @@
+"""
+USGS Streamgage Data Retrieval Script
+-------------------------------------
+This script facilitates the automated downloading of USGS gauge data.
+It retrieves real-time streamflow data from the USGS National Water Information System (NWIS)
+using the USGS Water Services API.
+
+Author: Dongchen Wang
+Date: 2024-10-15
+Version: 1.0
+
+Usage:
+    - Ensure you have an active internet connection.
+    - Customize the parameters as needed for your specific use case.
+    - Run the script in a Python environment.
+    - downloadUSGS(siteNo,dtype,startDT,endDT,saveheaderparth=None,printHeader=True) is for USGS streamgage time series data retrieval
+    - downloadUSGSWQ(siteNo,dtype,paramgroup,saveheaderparth=None,printHeader=True) is for USGS water quality data retrieval
+    - Use df.to_csv(fname) to save the datafile
+    - Use readDownloadedData(fname) to read the downloaded data file
+    
+Dependencies:
+    - urllib.request
+    - pandas
+    - numpy
+
+Example:
+    - python usgs_streamgage_retrieval.py
+    - or check the jupyter notebook example: USGS_Streamgage-Auto-Retriveal_Example.ipynb
+
+References:
+    - USGS Water Services API Documentation: https://waterservices.usgs.gov/
+"""
+
+
 import numpy as np
 import pandas as pd
 import urllib.request
@@ -27,8 +61,9 @@ def genUSGSUrl(siteNo,dtype,startDT,endDT):
     '''
     outformat='rdb'
     siteStatus='all'
-    
-    Url='http://waterservices.usgs.gov/nwis/'
+
+    #    https://waterservices.usgs.gov/nwis/iv/?sites=07381590&startDT=2024-10-08T21:40:46.407-05:00&endDT=2024-10-15T21:40:46.407-05:00&parameterCd=00065&format=rdb
+    Url='https://waterservices.usgs.gov/nwis/'
     Url=Url+addSlash(dtype)
     Url=Url+'?format='+outformat+'&sites='+siteNo+'&startDT='+startDT+'&endDT='+endDT+'&siteStatus='+siteStatus
     return Url
@@ -40,7 +75,10 @@ def downloadUSGS(siteNo,dtype,startDT,endDT,saveheaderparth=None,printHeader=Tru
         print('Downloading ',Url)
     
     datahead=[]
-    outputHead=saveheaderparth+'USGS'+siteNo+'_'+dtype+'_head.txt'
+    if saveheaderparth != None:
+        outputHead=os.path.join(saveheaderparth,'USGS'+siteNo+'_'+dtype+'_head.txt')
+    else:
+        outputHead='USGS'+siteNo+'_'+dtype+'_head.txt'
     data = urllib.request.urlopen(Url) # it's a file like object and works just like a file
     for line in data: # files are iterable
         if b'#' in line:
@@ -92,7 +130,10 @@ def downloadUSGSWQ(siteNo,dtype,paramgroup,saveheaderparth=None,printHeader=True
         print('Downloading ',Url)
     
     datahead=[]
-    outputHead=saveheaderparth+'USGS'+siteNo+'_'+dtype+'_head.txt'
+    if saveheaderparth != None:
+        outputHead=os.path.join(saveheaderparth,'USGS'+siteNo+'_'+dtype+'_head.txt')
+    else:
+        outputHead=os.path.join('USGS'+siteNo+'_'+dtype+'_head.txt')
     data = urllib.request.urlopen(Url) # it's a file like object and works just like a file
     for line in data: # files are iterable
         if b'#' in line:
@@ -110,6 +151,9 @@ def downloadUSGSWQ(siteNo,dtype,paramgroup,saveheaderparth=None,printHeader=True
 
 
 def findUSGSCode(Df, paramType):
+    '''
+    # This function can automatically find the parameter number in the USGS data 
+    '''
     if paramType=='Q':
         paramCode='00060'
     elif paramType=='Stage':
@@ -121,14 +165,14 @@ def findUSGSCode(Df, paramType):
     elif paramType=='Tempmean':
         paramCode='00010'
     else:
-        print('Error in findUSGSCode!!! Parameter code not found!!!')
+        print('Error in findUSGSCode!!! Parameter code not found!')
+        print('Please choose from: "Q", "Stage", "Umean", "Turbidity", "Tempmean", or edit this function to self define a parameter.')
         return
     
     paramCodes = [item[0] for item in Df.columns]
     result = [item for item in paramCodes if paramCode in item and not item.endswith("_cd")]
     if len(result)==0:
         print('Error in findUSGSCode!!! Parameter code not in the dataset!!!','USGS site number:',Df['site_no']['15s'].iloc[0])
-
         return
     if len(result)>1:
         result = [item for item in paramCodes if '00003' in item and not item.endswith("_cd")]
@@ -146,13 +190,27 @@ def readDownloadedData(fname):
 
 
 if __name__ == "__main__":
-    siteNo='05536368'
-    startDT='2000-01-01'
+    #USGS Streamgage flow data download example
+    siteNo='07381590'
+    startDT='2021-01-01'
     endDT='2022-12-31'
     dtype='iv'
-    datahead,df=downloadUSGS(siteNo,dtype,startDT,endDT)
+    saveheaderparth='DataDownload'#The foldername to save the USGS header file
+    datahead,df=downloadUSGS(siteNo,dtype,startDT,endDT,saveheaderparth=saveheaderparth)
 
+
+    PlotParameterType='Q'
+    plt.figure(figsize=(12,3))
+    plt.plot(df[findUSGSCode(df, PlotParameterType)]['14n'])
+    plt.grid()
+    plt.ylabel(PlotParameterType)
+    plt.show()
+
+    #USGS Streamgage water quality data download example
     dtype='qwdata'
     paramgroup='SED'
     siteNo='15565447'
-    dataheadYukonSed,dfYukonSed=downloadUSGSWQ(siteNo,dtype,paramgroup)
+    saveheaderparth='DataDownload'#The foldername to save the USGS header file
+    dataheadYukonSed,dfYukonSed=downloadUSGSWQ(siteNo,dtype,paramgroup,saveheaderparth=saveheaderparth)
+
+    dfYukonSed.tail

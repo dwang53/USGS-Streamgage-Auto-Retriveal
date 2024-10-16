@@ -1,0 +1,106 @@
+#
+# File created on 2024-10-15 23:13:48 EDT
+#
+# U.S. Geological Survey
+# 
+# This file contains selected water-quality data for stations in the National Water 
+# Information System water-quality database.  Explanation of codes found in this file are 
+# followed by the retrieved data. 
+#
+# The data you have secured from the USGS NWISWeb database may include data that have 
+# not received Director's approval and as such are provisional and subject to revision. 
+# The data are released on the condition that neither the USGS nor the United States 
+# Government may be held liable for any damages resulting from its authorized or 
+# unauthorized use.
+#
+# To view additional data-quality attributes, output the results using these options:  
+# one result per row, expanded attributes.  
+#
+#  agency_cd                  - Agency Code
+#  site_no                    - USGS site number
+#  sample_dt                  - Begin date
+#  sample_tm                  - Begin time
+#  sample_end_dt              - End date
+#  sample_end_tm              - End time
+#  sample_start_time_datum_cd - Time datum
+#  tm_datum_rlbty_cd          - Time datum reliability code
+#  coll_ent_cd                - Agency Collecting Sample Code
+#  medium_cd                  - Sample Medium Code
+#  tu_id                      - Taxonomic unit code
+#  body_part_id               - Body part code
+#  parm_cd                    - Parameter code
+#  remark_cd                  - Remark code
+#  result_va                  - Parameter value
+#  val_qual_tx                - Result value qualifier code
+#  meth_cd                    - Method code
+#  dqi_cd                     - Data-quality indicator code
+#  rpt_lev_va                 - Reporting level
+#  rpt_lev_cd                 - Reporting level type
+#  lab_std_va                 - Lab standard deviation
+#  anl_ent_cd                 - Analyzing entity code
+#
+# The following parameters are included:
+#  50279  - Suspended sediment concentration, flow-through centrifuge, milligrams per liter
+#  70331  - Suspended sediment, sieve diameter, percent smaller than 0.0625 millimeters
+#  70332  - Suspended sediment, sieve diameter, percent smaller than 0.125 millimeters
+#  70333  - Suspended sediment, sieve diameter, percent smaller than 0.25 millimeters
+#  70334  - Suspended sediment, sieve diameter, percent smaller than 0.5 millimeters
+#  70337  - Suspended sediment, fall diameter (deionized water), percent smaller than 0.002 millimeters
+#  70338  - Suspended sediment, fall diameter (deionized water), percent smaller than 0.004 millimeters
+#  70339  - Suspended sediment, fall diameter (deionized water), percent smaller than 0.008 millimeters
+#  70340  - Suspended sediment, fall diameter (deionized water), percent smaller than 0.016 millimeters
+#  70341  - Suspended sediment, fall diameter (deionized water), percent smaller than 0.031 millimeters
+#  70342  - Suspended sediment, fall diameter (deionized water), percent smaller than 0.0625 millimeters
+#  70343  - Suspended sediment, fall diameter (deionized water), percent smaller than 0.125 millimeters
+#  70344  - Suspended sediment, fall diameter (deionized water), percent smaller than 0.25 millimeters
+#  70345  - Suspended sediment, fall diameter (deionized water), percent smaller than 0.5 millimeters
+#  80154  - Suspended sediment concentration, milligrams per liter
+#  80155  - Suspended sediment discharge, short tons per day
+#  80164  - Bed sediment, sieve diameter, percent smaller than 0.0625 millimeters
+#
+# Description of sample_start_time_datum_cd:
+# AKST  - Alaska Standard Time
+# AST  - Atlantic Standard Time (Canada)
+# AKDT  - Alaska Daylight Time
+#
+# Description of tm_datum_rlbty_cd:
+# K  - Known
+# T  - Transferred
+#
+# Description of coll_ent_cd and anl_ent_cd:
+# USGS  - U.S. Geological Survey
+# USGS-AKL  - USGS-District Water-Quality Lab, Anchorage, Alaska
+# USGS-WRD  - U.S. Geological Survey-Water Resources Discipline
+# USGSNWQL  - USGS-National Water Quality Lab, Denver, CO
+# USGS-CVO  - USGS-Cascades Volcano Obs Sed Analysis Lab, Vancouver, WA
+#
+# Description of medium_cd:
+# WS  - Surface water
+#
+# Description of tu_id:
+# https://www.itis.gov/
+#
+# Description of body_part_id:
+#
+# Description of remark_cd:
+# E  - Estimated
+#
+# Description of val_qual_tx:
+#
+# Description of meth_cd:
+# ALGOR  - Computation by NWIS algorithm
+# SED10  - Sediment conc by filtration
+# SED16  - Sediment conc from size analysis
+# SED30  - Wet sieve
+#
+# Description of dqi_cd:
+# A  - Historical data
+# R  - Reviewed and approved
+# S  - Provisional
+#
+# Description of rpt_lev_cd:
+# MRL  - Minimum reporting level
+#
+# Data for the following sites are included:
+#  USGS 15565447 YUKON R AT PILOT STATION AK
+#
