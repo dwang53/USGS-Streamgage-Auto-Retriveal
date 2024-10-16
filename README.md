@@ -32,4 +32,4 @@ Dongchen Wang
 
 
 ## References
-- USGS Water Services API Documentation
+- USGS Water Services API Documentation: https://waterservices.usgs.gov/
