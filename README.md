@@ -1,4 +1,4 @@
-# USGS Streamgage Data Retrieval Script
+# USGS Streamgage Data Auto Retrieval Script
 
 This script facilitates the automated downloading of USGS gauge data. It retrieves real-time streamflow data from the USGS National Water Information System (NWIS) using the USGS Water Services API.
 
@@ -28,6 +28,7 @@ Dongchen Wang
 ## Example
 - Run the script: `python usgs_streamgage_retrieval.py`
 - Or check the Jupyter notebook example: `USGS_Streamgage-Auto-Retriveal_Example.ipynb`
+!ExamplePlot.png
 
 ## References
 - USGS Water Services API Documentation
