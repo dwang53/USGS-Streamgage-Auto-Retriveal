@@ -144,7 +144,8 @@ def downloadUSGSWQ(siteNo,dtype,paramgroup,saveheaderparth=None,printHeader=True
         for line in datahead:
             f.write(line)
     df=pd.read_csv(Url,sep='\t',comment='#',header=[0,1],low_memory=False)
-    
+    #df['sample_tm']['5d'] = df['sample_tm']['5d'].fillna('12:00')
+    df.loc[df['sample_tm']['5d'].isna(), ('sample_tm', '5d')] = '12:00'
     df['datetime']=pd.to_datetime(df['sample_dt']['10d']+' '+ df['sample_tm']['5d']+':00')
     df=df.set_index(['datetime'])
     return datahead,df
