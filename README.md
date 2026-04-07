@@ -53,6 +53,8 @@ The intended pattern is:
 - The old NWIS `qwdata` path used in earlier versions is no longer reliable for current water-quality downloads.
 - The updated water-quality workflow uses the Water Quality Portal result API instead.
 - For suspended sediment retrieval, a targeted `characteristic_name` query such as `Suspended Sediment Concentration (SSC)` is recommended instead of broad legacy group queries.
+- Water-quality results are site-dependent. Different gauges can expose different observed sediment P-codes, so processed outputs should default to the observed parameters rather than forcing a shared template full of empty columns.
+- The saved WQ header text file is intended to explain which P-codes were actually returned in the downloaded table and what each code means.
 
 ## Dependencies
 - `urllib.request`
@@ -77,3 +79,5 @@ The intended pattern is:
   - kept `downloadUSGSWQ(...)` backward-compatible while adding `characteristic_name=...`
   - added `convertCommonUnitsToSI(df)` for common streamflow and suspended-sediment SI conversion
   - updated the README to reflect the current workflow and supported conversions
+  - added WQ header summaries that list the observed sediment P-codes and their meanings
+  - documented that WQ processed outputs should stay observed-only by default because the available P-codes are site-dependent

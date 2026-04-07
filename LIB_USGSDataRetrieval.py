@@ -39,8 +39,73 @@ import urllib.parse
 
 import sys,os
 
+USGS_SEDIMENT_PARAMETER_FALLBACKS = {
+    '69273': ('Suspended sediment, fall diameter (deionized water), percent smaller than 0.001 millimeters', '%', 'fraction'),
+    '70331': ('Suspended sediment, sieve diameter, percent smaller than 0.0625 millimeters', '%', 'fraction'),
+    '70332': ('Suspended sediment, sieve diameter, percent smaller than 0.125 millimeters', '%', 'fraction'),
+    '70333': ('Suspended sediment, sieve diameter, percent smaller than 0.25 millimeters', '%', 'fraction'),
+    '70334': ('Suspended sediment, sieve diameter, percent smaller than 0.5 millimeters', '%', 'fraction'),
+    '70337': ('Suspended sediment, sieve diameter, percent smaller than 1 millimeter', '%', 'fraction'),
+    '70338': ('Suspended sediment, sieve diameter, percent smaller than 2 millimeters', '%', 'fraction'),
+    '70339': ('Suspended sediment, sieve diameter, percent smaller than 4 millimeters', '%', 'fraction'),
+    '70340': ('Suspended sediment, sieve diameter, percent smaller than 8 millimeters', '%', 'fraction'),
+    '70341': ('Suspended sediment, sieve diameter, percent smaller than 16 millimeters', '%', 'fraction'),
+    '80154': ('Suspended sediment concentration, milligrams per liter', 'mg/l', 'kg/m3'),
+}
+
 def addSlash(text):
     return text+'/'
+
+
+def buildObservedWQParameterSummary(df):
+    '''
+    Build a simple summary table for the parameter codes actually observed in a
+    downloaded Water Quality Portal table.
+    '''
+    if 'USGSPCode' not in df.columns:
+        return pd.DataFrame(columns=['USGSPCode','ResultMeasure/MeasureUnitCode','SuggestedUnitSI','ParameterExplanation'])
+    summary = df[['USGSPCode','ResultMeasure/MeasureUnitCode']].dropna(subset=['USGSPCode']).drop_duplicates().copy()
+    summary['USGSPCode'] = summary['USGSPCode'].astype(str)
+    summary['ParameterExplanation'] = summary['USGSPCode'].map(
+        lambda code: USGS_SEDIMENT_PARAMETER_FALLBACKS.get(code, ('', '', ''))[0]
+    )
+    summary['SuggestedUnitSI'] = summary['USGSPCode'].map(
+        lambda code: USGS_SEDIMENT_PARAMETER_FALLBACKS.get(code, ('', '', ''))[2]
+    )
+    summary['SuggestedUnitSI'] = summary['SuggestedUnitSI'].replace('', np.nan)
+    raw_unit = summary['ResultMeasure/MeasureUnitCode'].astype(str)
+    summary.loc[raw_unit.str.lower()=='mg/l','SuggestedUnitSI'] = 'kg/m3'
+    summary.loc[raw_unit=='%','SuggestedUnitSI'] = 'fraction'
+    summary.loc[raw_unit.str.lower()=='tons/day','SuggestedUnitSI'] = 'kg/s'
+    return summary.sort_values('USGSPCode').reset_index(drop=True)
+
+
+def writeObservedWQParameterSummary(df, siteNo, dtype, characteristic_name=None, saveheaderparth=None):
+    '''
+    Write a plain-text header summary listing the Water Quality Portal parameter
+    codes actually observed in the downloaded table.
+    '''
+    if saveheaderparth != None:
+        outputHead=os.path.join(saveheaderparth,'USGS'+siteNo+'_'+dtype+'_head.txt')
+    else:
+        outputHead=os.path.join('USGS'+siteNo+'_'+dtype+'_head.txt')
+    lines = ['# Downloaded from current Water Quality Portal endpoint\n']
+    if characteristic_name is not None:
+        lines.append('# characteristicName='+str(characteristic_name)+'\n')
+    lines.append('# observed parameter codes in the downloaded table:\n')
+    lines.append('# USGSPCode | raw unit | suggested SI unit | parameter explanation\n')
+    summary = buildObservedWQParameterSummary(df)
+    for _, row in summary.iterrows():
+        lines.append(
+            str(row['USGSPCode'])+' | '
+            +str(row['ResultMeasure/MeasureUnitCode'])+' | '
+            +str(row['SuggestedUnitSI'])+' | '
+            +str(row['ParameterExplanation'])+'\n'
+        )
+    with open(outputHead,'wb') as f:
+        for line in lines:
+            f.write(line.encode('utf-8'))
+    return outputHead
 
 def genUSGSUrl(siteNo,dtype,startDT,endDT):
     '''
@@ -130,9 +195,6 @@ def downloadUSGSWQ(siteNo,dtype,paramgroup=None,saveheaderparth=None,printHeader
         outputHead=os.path.join(saveheaderparth,'USGS'+siteNo+'_'+dtype+'_head.txt')
     else:
         outputHead=os.path.join('USGS'+siteNo+'_'+dtype+'_head.txt')
-    with open(outputHead,'wb') as f:
-        for line in datahead:
-            f.write(line)
     df=pd.read_csv(Url,low_memory=False)
     if 'ActivityStartTime/Time' in df.columns:
         df['ActivityStartTime/Time'] = df['ActivityStartTime/Time'].fillna('12:00:00')
@@ -142,6 +204,7 @@ def downloadUSGSWQ(siteNo,dtype,paramgroup=None,saveheaderparth=None,printHeader
         df['ActivityStartDate'].astype(str)+' '+df['ActivityStartTime/Time'].astype(str),
         errors='coerce'
     )
+    writeObservedWQParameterSummary(df, siteNo, dtype, characteristic_name=characteristic_name, saveheaderparth=saveheaderparth)
     df=df.set_index(['datetime'])
     return datahead,df
 
