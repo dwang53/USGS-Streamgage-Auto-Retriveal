@@ -35,6 +35,7 @@ References:
 import numpy as np
 import pandas as pd
 import urllib.request
+import urllib.parse
 
 import sys,os
 
@@ -94,61 +95,93 @@ def downloadUSGS(siteNo,dtype,startDT,endDT,saveheaderparth=None,printHeader=Tru
     return datahead,df
 
 
-def genUSGS_WQData_Url(siteNo,dtype,paramgroup):
+def genUSGS_WQData_Url(siteNo,dtype,paramgroup=None,characteristic_name=None):
     '''
-    #dtype = iv(instantaneous values), dv(daily averaged value), mv(monthly averaged value), yv
-    ##
-    #&format=waterml // WaterML 1.1 wanted
-    #&format=waterml,1.1 // WaterML version 1.1 wanted
-    #&format=waterml,2.0 // WaterML version 2.0 wanted
-    #&format=rdb
-    #&format=rdb,1.0
-    #&format=json // WaterML 1.1 translated into JSON
-    #&format=json,1.1
-    #&format=json,2.0 // A JSON version of WaterML2 is not presently available. Will cause an error.
-    ##
-    #Example startDT=2017-04-25
-    ##
-    #siteStatus=[ all | active | inactive ]
-    ##
+    # Water-quality retrieval now uses the current Water Quality Portal CSV API.
+    # `paramgroup` is kept for backward compatibility and is mapped to the WQP
+    # `characteristicGroup` query parameter.
+    # `characteristic_name` can be used for a narrower query, for example
+    # "Suspended Sediment Concentration (SSC)".
     '''
-    outformat='rdb'
-    siteStatus='all'
-    #'https://nwis.waterdata.usgs.gov/nwis/qwdata/?site_no=15565447&agency_cd=USGS&param_group=SED&format=rdb'
-    Url='https://nwis.waterdata.usgs.gov/nwis/'
-    Url=Url+addSlash(dtype)
-    Url=Url+'?site_no='+siteNo+'&agency_cd=USGS&param_group='+paramgroup+'&format='+outformat
+    query = {
+        'siteid': 'USGS-'+siteNo,
+        'mimeType': 'csv',
+    }
+    if characteristic_name is not None:
+        query['characteristicName'] = characteristic_name
+    elif paramgroup is not None:
+        query['characteristicGroup'] = paramgroup
+    Url='https://www.waterqualitydata.us/data/Result/search?'+urllib.parse.urlencode(query, quote_via=urllib.parse.quote)
     return Url
 
 
 
 
-def downloadUSGSWQ(siteNo,dtype,paramgroup,saveheaderparth=None,printHeader=True):
-    #Url=genUSGSUrl(siteNo,dtype,startDT,endDT)
-    Url=genUSGS_WQData_Url(siteNo,dtype,paramgroup)
+def downloadUSGSWQ(siteNo,dtype,paramgroup=None,saveheaderparth=None,printHeader=True,characteristic_name=None):
+    # `dtype` is retained for backward compatibility with earlier calls even
+    # though the current WQP endpoint does not use it in the URL.
+    Url=genUSGS_WQData_Url(siteNo,dtype,paramgroup,characteristic_name=characteristic_name)
     if printHeader:
         print('Downloading ',Url)
     
-    datahead=[]
+    datahead=['# Downloaded from current Water Quality Portal endpoint\n'.encode('utf-8'),
+              ('# URL: '+Url+'\n').encode('utf-8')]
     if saveheaderparth != None:
         outputHead=os.path.join(saveheaderparth,'USGS'+siteNo+'_'+dtype+'_head.txt')
     else:
         outputHead=os.path.join('USGS'+siteNo+'_'+dtype+'_head.txt')
-    data = urllib.request.urlopen(Url) # it's a file like object and works just like a file
-    for line in data: # files are iterable
-        if b'#' in line:
-            if printHeader:
-                print(line)
-            datahead.append(line)
     with open(outputHead,'wb') as f:
         for line in datahead:
             f.write(line)
-    df=pd.read_csv(Url,sep='\t',comment='#',header=[0,1],low_memory=False)
-    #df['sample_tm']['5d'] = df['sample_tm']['5d'].fillna('12:00')
-    df.loc[df['sample_tm']['5d'].isna(), ('sample_tm', '5d')] = '12:00'
-    df['datetime']=pd.to_datetime(df['sample_dt']['10d']+' '+ df['sample_tm']['5d']+':00')
+    df=pd.read_csv(Url,low_memory=False)
+    if 'ActivityStartTime/Time' in df.columns:
+        df['ActivityStartTime/Time'] = df['ActivityStartTime/Time'].fillna('12:00:00')
+    else:
+        df['ActivityStartTime/Time'] = '12:00:00'
+    df['datetime']=pd.to_datetime(
+        df['ActivityStartDate'].astype(str)+' '+df['ActivityStartTime/Time'].astype(str),
+        errors='coerce'
+    )
     df=df.set_index(['datetime'])
     return datahead,df
+
+
+def convertCommonUnitsToSI(df):
+    '''
+    Convert a few common USGS streamflow and suspended-sediment units into SI.
+
+    Recognized conversions:
+    - ft3/s -> m3/s
+    - ft -> m
+    - ft/s -> m/s
+    - mg/L -> kg/m3
+    - % -> fraction
+    - tons/day -> kg/s using short tons
+    '''
+    out=df.copy()
+    if isinstance(out.columns, pd.MultiIndex):
+        for col in out.columns:
+            col0 = str(col[0])
+            if '00060' in col0 and not col0.endswith('_cd'):
+                out[(col0+'_SI','m3/s')] = pd.to_numeric(out[col], errors='coerce')*0.028316846592
+            if '00065' in col0 and not col0.endswith('_cd'):
+                out[(col0+'_SI','m')] = pd.to_numeric(out[col], errors='coerce')*0.3048
+            if '72294' in col0 and not col0.endswith('_cd'):
+                out[(col0+'_SI','m/s')] = pd.to_numeric(out[col], errors='coerce')*0.3048
+    else:
+        if 'ResultMeasureValue' in out.columns and 'ResultMeasure/MeasureUnitCode' in out.columns:
+            out['ResultMeasureValue_SI'] = pd.to_numeric(out['ResultMeasureValue'], errors='coerce').astype(float)
+            out['ResultMeasureUnit_SI'] = out['ResultMeasure/MeasureUnitCode']
+            mg_mask = out['ResultMeasure/MeasureUnitCode'].astype(str).str.lower() == 'mg/l'
+            out.loc[mg_mask, 'ResultMeasureValue_SI'] = out.loc[mg_mask, 'ResultMeasureValue_SI']*0.001
+            out.loc[mg_mask, 'ResultMeasureUnit_SI'] = 'kg/m3'
+            pct_mask = out['ResultMeasure/MeasureUnitCode'].astype(str) == '%'
+            out.loc[pct_mask, 'ResultMeasureValue_SI'] = out.loc[pct_mask, 'ResultMeasureValue_SI']/100.0
+            out.loc[pct_mask, 'ResultMeasureUnit_SI'] = 'fraction'
+            ton_mask = out['ResultMeasure/MeasureUnitCode'].astype(str).str.lower() == 'tons/day'
+            out.loc[ton_mask, 'ResultMeasureValue_SI'] = out.loc[ton_mask, 'ResultMeasureValue_SI']*907.18474/86400.0
+            out.loc[ton_mask, 'ResultMeasureUnit_SI'] = 'kg/s'
+    return out
 
 
 def findUSGSCode(Df, paramType):
