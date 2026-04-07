@@ -11,6 +11,20 @@ Dongchen Wang
 ## Version
 1.1
 
+## Current workflow
+
+This repository now supports two complementary USGS data paths:
+
+- Streamflow and stage time series from the USGS Water Services API through `downloadUSGS(...)`
+- Water-quality result tables from the Water Quality Portal through `downloadUSGSWQ(...)`
+
+The intended pattern is:
+
+1. Download raw streamgage time series with `downloadUSGS(...)`
+2. Download raw water-quality tables with `downloadUSGSWQ(...)`
+3. Save the raw outputs with `df.to_csv(...)`
+4. Convert common discharge, stage, velocity, and suspended-sediment units to SI using `convertCommonUnitsToSI(df)`
+
 ## Usage
 - Ensure you have an active internet connection.
 - Customize the parameters as needed for your specific use case.
@@ -23,8 +37,26 @@ Dongchen Wang
 - Use `df.to_csv(fname)` to save the data file.
 - Use `readDownloadedData(fname)` to read the downloaded data file.
 
+## Supported unit conversions
+
+`convertCommonUnitsToSI(df)` currently handles these common fields:
+
+- `ft3/s` to `m3/s`
+- `ft` to `m`
+- `ft/s` to `m/s`
+- `mg/L` to `kg/m3`
+- `%` to fraction
+- `tons/day` to `kg/s` using short tons
+
+## Notes
+
+- The old NWIS `qwdata` path used in earlier versions is no longer reliable for current water-quality downloads.
+- The updated water-quality workflow uses the Water Quality Portal result API instead.
+- For suspended sediment retrieval, a targeted `characteristic_name` query such as `Suspended Sediment Concentration (SSC)` is recommended instead of broad legacy group queries.
+
 ## Dependencies
 - `urllib.request`
+- `urllib.parse`
 - `pandas`
 - `numpy`
 
@@ -37,3 +69,11 @@ Dongchen Wang
 ## References
 - USGS Water Services API Documentation: https://waterservices.usgs.gov/
 - Water Quality Portal Result API: https://www.waterqualitydata.us/
+
+## Update log
+
+- `2026-04-07`
+  - updated water-quality retrieval to use the current Water Quality Portal result API
+  - kept `downloadUSGSWQ(...)` backward-compatible while adding `characteristic_name=...`
+  - added `convertCommonUnitsToSI(df)` for common streamflow and suspended-sediment SI conversion
+  - updated the README to reflect the current workflow and supported conversions
