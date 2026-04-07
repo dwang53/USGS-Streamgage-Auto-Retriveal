@@ -1,6 +1,6 @@
 # USGS Streamgage Data Auto Retrieval Script
 
-This script facilitates the automated downloading of USGS gauge data. It retrieves real-time streamflow data from the USGS National Water Information System (NWIS) using the USGS Water Services API.
+This script facilitates the automated downloading of USGS gauge data. It retrieves streamflow data from the USGS National Water Information System (NWIS) Water Services API and water-quality data from the current Water Quality Portal CSV endpoint.
 
 ## Author
 Dongchen Wang
@@ -9,14 +9,17 @@ Dongchen Wang
 2024-10-15
 
 ## Version
-1.0
+1.1
 
 ## Usage
 - Ensure you have an active internet connection.
 - Customize the parameters as needed for your specific use case.
 - Run the script in a Python environment.
 - `downloadUSGS(siteNo, dtype, startDT, endDT, saveheaderparth=None, printHeader=True)` is for USGS streamgage time series data retrieval.
-- `downloadUSGSWQ(siteNo, dtype, paramgroup, saveheaderparth=None, printHeader=True)` is for USGS water quality data retrieval.
+- `downloadUSGSWQ(siteNo, dtype, paramgroup=None, saveheaderparth=None, printHeader=True, characteristic_name=None)` is for USGS water-quality data retrieval.
+  - `paramgroup` is kept for backward compatibility and maps to the Water Quality Portal `characteristicGroup` query.
+  - `characteristic_name` is recommended when you want a narrower query such as `Suspended Sediment Concentration (SSC)`.
+- `convertCommonUnitsToSI(df)` converts common streamflow and suspended-sediment units into SI-friendly columns.
 - Use `df.to_csv(fname)` to save the data file.
 - Use `readDownloadedData(fname)` to read the downloaded data file.
 
@@ -33,3 +36,4 @@ Dongchen Wang
 
 ## References
 - USGS Water Services API Documentation: https://waterservices.usgs.gov/
+- Water Quality Portal Result API: https://www.waterqualitydata.us/
